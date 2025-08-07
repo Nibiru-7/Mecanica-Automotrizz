@@ -6,8 +6,8 @@ WORKDIR /usr/src/app
 # Copiar package.json y package-lock.json
 COPY package*.json ./
 
-# Instalar dependencias
-RUN npm install
+# Instalar todas las dependencias (incluyendo devDependencies)
+RUN npm ci
 
 # Copiar tsconfig.json
 COPY tsconfig.json ./
@@ -23,9 +23,18 @@ FROM node:18-alpine
 
 WORKDIR /usr/src/app
 
-# Copiar solo lo necesario
-COPY --from=builder /usr/src/app/node_modules ./node_modules
+# Copiar package.json para instalar solo dependencias de producción
+COPY package*.json ./
+
+# Instalar solo dependencias de producción
+RUN npm ci --only=production
+
+# Copiar archivos compilados
 COPY --from=builder /usr/src/app/dist ./dist
-COPY --from=builder /usr/src/app/.env ./
+
+# Crear archivo .env vacío si no existe (deberás configurarlo)
+RUN touch .env
 
 EXPOSE 3000
+
+CMD ["npm", "start"]
